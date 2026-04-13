@@ -6,13 +6,11 @@ import (
 	"os"
 )
 
-func printRequestPath(r *http.Request) {
-	fmt.Printf("Serving: %s\n", r.URL.Path)
-}
-
 func BvisIndex(w http.ResponseWriter, r *http.Request) {
 	printRequestPath(r)
 	msg := "<h1>Welcome to bvis. Please login to continue</h1>"
+
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(msg))
 }
 
@@ -63,16 +61,12 @@ func UploadBook(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func RegisterRoutes() {
-	http.HandleFunc("/", BvisIndex)
-	http.HandleFunc("/upload-book", UploadBook)
-}
-
-/*
-func NewRouter() *http.ServeMux {
+func RegisterRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", BvisIndex)
-	mux.HandleFunc("/upload-book", UploadBook)
+	mux.Handle("/", http.HandlerFunc(BvisIndex))
+	mux.Handle("/upload-book", http.HandlerFunc(UploadBook))
+	mux.Handle("/login", http.HandlerFunc(LogIn))
+	mux.Handle("/logout", http.HandlerFunc(Logout))
+	mux.Handle("/dashboard", http.HandlerFunc(GetUserDahsboard))
 	return mux
 }
-*/
