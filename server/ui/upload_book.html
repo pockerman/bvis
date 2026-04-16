@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>bvis-upload-book</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+   <h1>Upload a new book</h1>
+	<form enctype="multipart/form-data" action="/upload-book" method="post">
+		<input type="file" name="book" />
+		<input type="submit" value="Upload" />
+	</form>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
