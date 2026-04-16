@@ -2,20 +2,15 @@ package routes
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 )
 
 func handleGETLogin(w http.ResponseWriter) {
 
-	html := `
-	<h1>Log in</h1>
-		<form action="/login" method="post">
-			<input type="email" name="email" />
-			<input type="password" name="password" />
-			<input type="submit" value="Log in" />
-	</form>`
+	var view = template.Must(template.ParseFiles("ui/login.html"))
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	view.Execute(w, nil)
 }
 
 func handleRedirect(w http.ResponseWriter, r *http.Request) {

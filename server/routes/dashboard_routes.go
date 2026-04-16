@@ -1,9 +1,13 @@
 package routes
 
 import (
-	"fmt"
+	"html/template"
 	"net/http"
 )
+
+type DashboardData struct {
+	User string
+}
 
 func GetUserDahsboard(w http.ResponseWriter, r *http.Request) {
 
@@ -19,6 +23,13 @@ func GetUserDahsboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "Welcome %s!", user)
+	// build the view. TODO: Refactor this to anothe function
+	var view = template.Must(template.ParseFiles("ui/dashboard.html"))
+	data := DashboardData{
+		User: user, // this would come from DB/session in real app
+	}
+
+	w.WriteHeader(http.StatusOK)
+	view.Execute(w, data)
 
 }
