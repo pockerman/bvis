@@ -5,8 +5,20 @@ import (
 	"net/http"
 )
 
+type Chapter struct {
+	ID    string
+	Title string
+}
+
+type Book struct {
+	ID       string
+	Title    string
+	Chapters []Chapter
+}
+
 type DashboardData struct {
-	User string
+	User  string
+	Books []Book
 }
 
 func GetUserDahsboard(w http.ResponseWriter, r *http.Request) {
@@ -27,6 +39,15 @@ func GetUserDahsboard(w http.ResponseWriter, r *http.Request) {
 	var view = template.Must(template.ParseFiles("ui/dashboard.html"))
 	data := DashboardData{
 		User: user, // this would come from DB/session in real app
+		Books: []Book{
+			{
+				ID:    "1",
+				Title: "Event Driven Design",
+				Chapters: []Chapter{
+					{ID: "4", Title: "Intro"},
+				},
+			},
+		},
 	}
 
 	w.WriteHeader(http.StatusOK)

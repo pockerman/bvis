@@ -1,8 +1,10 @@
 package main
 
 import (
-	"bvis/routes"
+	"bvis/server/impl/content"
+	"bvis/server/routes"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 	"time"
@@ -10,27 +12,42 @@ import (
 
 func main() {
 
-	// The port number and the hostname should be separated with a colon (:),
-	//which should be there even if there is no hostname
 	PORT := ":8001"
-	fmt.Println("Starting server...listening at port: ", PORT)
+	fmt.Println("Starting server... listening at port:", PORT)
 
-	// register the routes the servere handles
-	mux := routes.RegisterRoutes()
+	// ---- Dependencies ----
+
+	repo := &content.BookRepository{
+		BasePath: "./data/books",
+	}
+
+	service := &content.BookLoaderService{
+		Repo: repo,
+	}
+
+	tmpl := template.Must(template.ParseFiles("ui/book_view.html"))
+
+	handler := &routes.BookLoaderHandler{
+		Service: service,
+		Tmpl:    tmpl,
+	}
+
+	// ---- Router ----
+	router := routes.RegisterRoutes(handler)
+
+	// ---- Server ----
 	s := &http.Server{
 		Addr:         PORT,
-		Handler:      mux,
+		Handler:      router,
 		IdleTimeout:  10 * time.Second,
 		ReadTimeout:  time.Second,
 		WriteTimeout: time.Second,
 	}
 
-	// begin the HTTP server using the predefined PORT number
+	// ---- Start Server ----
 	err := s.ListenAndServe()
-
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-
 }

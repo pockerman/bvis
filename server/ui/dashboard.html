@@ -1,16 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>bvis-dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/dashboard.css">
 </head>
 <body>
-    <h1>Welcome {{.User}}</h1>
 
-    <a href="/upload-book">
-        <button>Upload new book</button>
-    </a>
+    <header class="header">
+        <h1>Welcome {{.User}}</h1>
 
-    <script src="/static/app.js"></script>
+        <a href="/upload-book" class="btn">
+            Upload new book
+        </a>
+    </header>
+
+    <main class="container">
+        <h2>Your Books</h2>
+
+        {{if .Books}}
+            {{range .Books}}
+                {{$book := .}}
+                <div class="book">
+                    <h3 class="book-title">{{$book.Title}}</h3>
+
+                    <ul class="chapter-list">
+                        {{range $book.Chapters}}
+                            <li class="chapter-item">
+                                <a class="chapter-link"
+                                   href="/books/{{$book.ID}}/chapters/{{.ID}}">
+                                    {{.Title}}
+                                </a>
+                            </li>
+                        {{end}}
+                    </ul>
+                </div>
+            {{end}}
+        {{else}}
+            <p class="empty-state">No books uploaded yet.</p>
+        {{end}}
+    </main>
+
 </body>
 </html>
