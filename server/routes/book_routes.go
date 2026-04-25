@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	log "github.com/sirupsen/logrus"
 )
 
 type BookLoaderHandler struct {
@@ -34,6 +35,7 @@ func (h *BookLoaderHandler) GetBookChapter(w http.ResponseWriter, r *http.Reques
 
 	user, ok := session.Values["user"].(string)
 	if !ok || user == "" {
+		log.Errorf("User %s is not signed in", user)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -43,6 +45,7 @@ func (h *BookLoaderHandler) GetBookChapter(w http.ResponseWriter, r *http.Reques
 
 	md, err := h.Service.LoadChapterMarkdown(bookID, chapterID)
 	if err != nil {
+		log.Errorf("Loading book: %s choater: %s failed with error %s", bookID, chapterID, err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -53,8 +56,6 @@ func (h *BookLoaderHandler) GetBookChapter(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// build the view. TODO: Refactor this to anothe function
-	//var view = template.Must(template.ParseFiles("ui/book_view.html"))
 	data := BookViewData{
 		User:        user,
 		BookID:      bookID,
@@ -64,6 +65,5 @@ func (h *BookLoaderHandler) GetBookChapter(w http.ResponseWriter, r *http.Reques
 
 	w.WriteHeader(http.StatusOK)
 	h.Tmpl.Execute(w, data)
-	//view.Execute(w, data)
 
 }

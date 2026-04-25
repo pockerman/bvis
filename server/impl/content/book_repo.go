@@ -2,9 +2,11 @@ package content
 
 import (
 	"errors"
-	"log"
+
 	"os"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type BookRepository struct {
@@ -23,12 +25,11 @@ func (r *BookRepository) GetChapterMarkdown(bookID, chapterID string) (string, e
 
 	bookPath := filepath.Join(r.BasePath, cleanBookID, "chapters", cleanChapterID, cleanChapterID+".md")
 
-	log.Println("Book path: ", bookPath)
+	log.Warnf("Book path: %s", bookPath)
 	data, err := os.ReadFile(bookPath)
 	if err != nil {
 
 		log.Println("Book", bookID, " chapter", chapterID, "is not found")
-
 		if os.IsNotExist(err) {
 			return "", errors.New("Chapter not found")
 		}

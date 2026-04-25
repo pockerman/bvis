@@ -2,21 +2,25 @@ package main
 
 import (
 	"bvis/server/impl/content"
+	"bvis/server/impl/utils"
 	"bvis/server/routes"
 	"fmt"
 	"html/template"
 	"net/http"
 	"os"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 
+	utils.InitLogger()
+
 	PORT := ":8001"
-	fmt.Println("Starting server... listening at port:", PORT)
+	log.Infof("Starting server... listening at port: %s", PORT)
 
 	// ---- Dependencies ----
-
 	repo := &content.BookRepository{
 		BasePath: "./data/books",
 	}
@@ -27,13 +31,17 @@ func main() {
 
 	tmpl := template.Must(template.ParseFiles("ui/book_view.html"))
 
-	handler := &routes.BookLoaderHandler{
+	bookHandler := &routes.BookLoaderHandler{
 		Service: service,
 		Tmpl:    tmpl,
 	}
 
+	aiHandler := &routes.AIRequestHandler{
+		OrchestratorURL: "http://localhost:9000",
+	}
+
 	// ---- Router ----
-	router := routes.RegisterRoutes(handler)
+	router := routes.RegisterRoutes(bookHandler, aiHandler)
 
 	// ---- Server ----
 	s := &http.Server{

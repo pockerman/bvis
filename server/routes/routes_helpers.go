@@ -3,12 +3,13 @@ package routes
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func printRequestPath(r *http.Request) {
-	fmt.Printf("Serving: %s\n", r.URL.Path)
+	log.Infof("Serving %s", r.URL.Path)
 }
 
 func generateSessionID() (string, error) {

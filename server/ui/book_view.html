@@ -1,18 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>bvis-book</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <title>bvis-reader</title>
+    <link rel="stylesheet" href="/static/book.css">
 </head>
 <body>
-    <h1>Welcome {{.User}}</h1>
 
-   <div class="reader">
-        <article class="content">
+<div class="layout">
+
+    <!-- LEFT: CHAPTER CONTENT -->
+    <div id="content" class="content">
+        <button class="toggle-btn" onclick="toggleChat()">💬 Chat</button>
+
+        <div class="chapter">
             {{.ChapterHTML}}
-        </article>
-   </div>
+        </div>
+    </div>
 
-    <script src="/static/app.js"></script>
+    <!-- RIGHT: CHAT PANEL -->
+    <div id="chat-panel" class="chat-panel">
+        <div class="chat-header">
+            <span>AI Assistant</span>
+            <button onclick="toggleChat()">✖</button>
+        </div>
+
+        <div id="chat-messages" class="chat-messages"></div>
+
+        <div class="chat-input">
+            <textarea id="chat-input" placeholder="Ask something..."></textarea>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    window.bookID = "{{.BookID}}";
+    window.chapterID = "{{.ChapterID}}";
+</script>
+
+<script>
+let chatOpen = true;
+
+function toggleChat() {
+    const panel = document.getElementById("chat-panel");
+    const content = document.getElementById("content");
+
+    chatOpen = !chatOpen;
+
+    if (chatOpen) {
+        panel.style.display = "flex";
+        content.style.width = "50%";
+    } else {
+        panel.style.display = "none";
+        content.style.width = "100%";
+    }
+}
+
+async function sendMessage() {
+    const input = document.getElementById("chat-input");
+    const messages = document.getElementById("chat-messages");
+
+    const text = input.value;
+    if (!text) return;
+
+    messages.innerHTML += `<div class="message user">${text}</div>`;
+    input.value = "";
+
+    const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            book_id: window.bookID,
+            chapter_id: window.chapterID,
+            query: text
+        })
+    });
+
+    const data = await res.json();
+
+    messages.innerHTML += `<div class="message ai">${data.result}</div>`;
+}
+</script>
+
 </body>
 </html>
