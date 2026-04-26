@@ -4,7 +4,32 @@
     <meta charset="UTF-8">
     <title>bvis-reader</title>
     <link rel="stylesheet" href="/static/book.css">
+
+    <style>
+        .hidden {
+            display: none !important;
+        }
+
+        .typing {
+            font-style: italic;
+            color: #888;
+            margin: 8px 0;
+        }
+
+        .dots::after {
+            content: '';
+            animation: dots 1.2s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%   { content: ''; }
+            25%  { content: '.'; }
+            50%  { content: '..'; }
+            75%  { content: '...'; }
+        }
+    </style>
 </head>
+
 <body>
 
 <div class="layout">
@@ -20,6 +45,7 @@
 
     <!-- RIGHT: CHAT PANEL -->
     <div id="chat-panel" class="chat-panel">
+
         <div class="chat-header">
             <span>AI Assistant</span>
             <button onclick="toggleChat()">✖</button>
@@ -27,20 +53,23 @@
 
         <div id="chat-messages" class="chat-messages"></div>
 
+        <!-- typing indicator (hidden by default, JS controls it) -->
+        <div id="typing-indicator" class="typing hidden">
+            AI is thinking<span class="dots"></span>
+        </div>
+
         <div class="chat-input">
             <textarea id="chat-input" placeholder="Ask something..."></textarea>
             <button onclick="sendMessage()">Send</button>
         </div>
-    </div>
 
+    </div>
 </div>
 
 <script>
-    window.bookID = "{{.BookID}}";
-    window.chapterID = "{{.ChapterID}}";
-</script>
+window.bookID = "{{.BookID}}";
+window.chapterID = "{{.ChapterID}}";
 
-<script>
 let chatOpen = true;
 
 function toggleChat() {
@@ -58,6 +87,24 @@ function toggleChat() {
     }
 }
 
+/* ---------------------------
+   Typing indicator helpers
+----------------------------*/
+
+function showTyping() {
+    const el = document.getElementById("typing-indicator");
+    el.classList.remove("hidden");
+}
+
+function hideTyping() {
+    const el = document.getElementById("typing-indicator");
+    el.classList.add("hidden");
+}
+
+/* ---------------------------
+   Streaming chat
+----------------------------*/
+
 async function sendMessage() {
     const input = document.getElementById("chat-input");
     const messages = document.getElementById("chat-messages");
@@ -67,6 +114,9 @@ async function sendMessage() {
 
     messages.innerHTML += `<div class="message user">${text}</div>`;
     input.value = "";
+
+    // show typing indicator immediately
+    showTyping();
 
     const res = await fetch("/api/ai", {
         method: "POST",
@@ -78,10 +128,48 @@ async function sendMessage() {
         })
     });
 
-    const data = await res.json();
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
 
-    messages.innerHTML += `<div class="message ai">${data.result}</div>`;
+    let output = "";
+
+    const aiDiv = document.createElement("div");
+    aiDiv.className = "message ai";
+    messages.appendChild(aiDiv);
+
+    let lastRender = "";
+
+    try {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+
+            // hide typing as soon as first token arrives
+            hideTyping();
+
+            output += chunk;
+
+            // simple throttled render
+            if (output !== lastRender) {
+                aiDiv.innerText = output;
+                lastRender = output;
+            }
+        }
+    } finally {
+        hideTyping();
+        aiDiv.innerText = output;
+    }
 }
+
+/* ---------------------------
+   Safety init
+----------------------------*/
+
+window.addEventListener("DOMContentLoaded", () => {
+    hideTyping();
+});
 </script>
 
 </body>

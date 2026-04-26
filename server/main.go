@@ -37,7 +37,8 @@ func main() {
 	}
 
 	aiHandler := &routes.AIRequestHandler{
-		OrchestratorURL: "http://localhost:9000",
+		OrchestratorBaseURL: "http://localhost:8000",
+		OrchestratorPrefix:  "/api",
 	}
 
 	// ---- Router ----

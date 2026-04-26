@@ -9,7 +9,8 @@ import (
 )
 
 type AIRequestHandler struct {
-	OrchestratorURL string
+	OrchestratorBaseURL string
+	OrchestratorPrefix  string
 }
 
 type AIRequest struct {
@@ -19,15 +20,16 @@ type AIRequest struct {
 }
 
 type OrchestratorPayload struct {
-	Query   string            `json:"query"`
-	Context map[string]string `json:"context"`
+	Query     string `json:"query"`
+	ChapterID string `json:"chapter_id"`
+	BookID    string `json:"book_id"`
 }
 
 type AIResponse struct {
 	Result string `json:"result"`
 }
 
-func (h *AIRequestHandler) HandleQuery(w http.ResponseWriter, r *http.Request) {
+/*func (h *AIRequestHandler) HandleQuery(w http.ResponseWriter, r *http.Request) {
 
 	printRequestPath(r)
 
@@ -70,11 +72,9 @@ func (h *AIRequestHandler) HandleQuery(w http.ResponseWriter, r *http.Request) {
 
 	// build payload for orchestrator
 	payload := OrchestratorPayload{
-		Query: req.Query,
-		Context: map[string]string{
-			"book_id":    req.BookID,
-			"chapter_id": req.ChapterID,
-		},
+		Query:     req.Query,
+		BookID:    req.BookID,
+		ChapterID: req.ChapterID,
 	}
 
 	body, err := json.Marshal(payload)
@@ -85,7 +85,7 @@ func (h *AIRequestHandler) HandleQuery(w http.ResponseWriter, r *http.Request) {
 
 	// send to orchestrator
 	resp, err := http.Post(
-		h.OrchestratorURL+"/task",
+		h.OrchestratorBaseURL+h.OrchestratorPrefix+"/task",
 		"application/json",
 		bytes.NewBuffer(body),
 	)
@@ -110,4 +110,61 @@ func (h *AIRequestHandler) HandleQuery(w http.ResponseWriter, r *http.Request) {
 	// return to frontend
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
+}*/
+
+func (h *AIRequestHandler) HandleQuery(w http.ResponseWriter, r *http.Request) {
+
+	printRequestPath(r)
+
+	// check of the user is login
+	session, err := Session.Get(r, "auth-session")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	user, ok := session.Values["user"].(string)
+	if !ok || user == "" {
+		log.Errorf("User %s is not signed in", user)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	var req AIRequest
+	payload, _ := json.Marshal(req)
+
+	resp, err := http.Post(
+		h.OrchestratorBaseURL+h.OrchestratorPrefix+"/task",
+		"application/json",
+		bytes.NewBuffer(payload),
+	)
+	if err != nil {
+		http.Error(w, "orchestrator unavailable", 502)
+		return
+	}
+	defer resp.Body.Close()
+
+	// IMPORTANT: streaming headers
+	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", 500)
+		return
+	}
+
+	buf := make([]byte, 1024)
+
+	for {
+		n, err := resp.Body.Read(buf)
+		if n > 0 {
+			w.Write(buf[:n])
+			flusher.Flush()
+		}
+		if err != nil {
+			break
+		}
+	}
 }

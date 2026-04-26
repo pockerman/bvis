@@ -13,24 +13,20 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /analysis_coordinator
+WORKDIR /app
 
-# Copy the utils in the container
-COPY ./core_utils /analysis_coordinator/analysis_coordinator/core_utils
-COPY ./summarization_utils /analysis_coordinator/analysis_coordinator/summarization_utils
-COPY ./pdf_generation_utils /analysis_coordinator/analysis_coordinator/pdf_generation_utils
+COPY ./__init__.py /app/orchestrator/__init__.py
+COPY ./routes.py   /app/orchestrator/routes.py
+COPY ./models.py  /app/orchestrator/models.py
+COPY ./main.py    /app/main.py
+COPY requirements.txt .
 
-COPY ./api /analysis_coordinator/analysis_coordinator/api
-COPY ./assets /analysis_coordinator/analysis_coordinator/assets
-COPY ./api/main.py .
-COPY api_reqs.txt .
-
-RUN pip install --no-cache-dir -r api_reqs.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # port this container exposes
 EXPOSE 8000
 
-ENV PYTHONPATH=/analysis_coordinator
+ENV PYTHONPATH=/app
 
 # =====================================================
 # ===== Set the command to run the uvicorn server =====
